@@ -9,7 +9,8 @@
 - [ ] Verify keyboard input and movement visually on the desktop window.
 
 ## Phase 1 — Core parity
-- [ ] Port common math and model types.
+- [x] Port common vector/math helpers with regression tests.
+- [ ] Port common model types (tiles, districts, enemies and interactables).
 - [ ] Port deterministic district generation and seeded RNG.
 - [ ] Port movement, collision and sliding resolution.
 - [ ] Port enemy state model and patrol/chase/alert logic.

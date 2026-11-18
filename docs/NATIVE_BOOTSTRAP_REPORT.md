@@ -29,6 +29,14 @@ The bootstrap renderer draws a procedural cyberpunk skyline, perspective floor g
 
 This is a native engine bootstrap, not a full port of the original game yet. The current scene is a shader-based renderer validation scene. Original district generation, collision, enemy AI, weapons, hacking, procedural audio, save persistence and the Android wrapper remain on the porting roadmap.
 
+## Phase 1 progress — 2026-11-18
+
+- Added `core/include/pd/core/math.hpp` with the Kotlin `Vector3` and `MathUtils` behavior.
+- Preserved the small-vector normalization threshold (`0.0001`), clamped interpolation parameter and signed angle-wrap interval `[-180°, 180°)`.
+- Extended `pd_core_smoke` with vector arithmetic, magnitude, distance, normalization, interpolation and angle-wrap regression checks.
+- Configured the smoke-test target to keep `assert` checks enabled in Release builds.
+- Recorded the source-to-native behavior mapping in `docs/CORE_MATH_PARITY.md`.
+
 ## Original project preservation
 
 No files in Permission-Denied-lab were changed. The new native work is isolated in Permission-Denied-Native.
