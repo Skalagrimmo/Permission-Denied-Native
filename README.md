@@ -1,23 +1,20 @@
 # Permission Denied — Native Engine
 
-Native C++ rewrite of the original Android/Kotlin prototype.
+Native C++ rewrite of the original Android/Kotlin prototype. The shared simulation and renderer are native; the Android Activity is a thin SDL lifecycle shell.
 
 ## Technical direction
 
-- C++20 for the shared simulation and game systems.
-- SDL3 for platform services: window, input, audio devices and lifecycle.
-- OpenGL for the shared renderer, with desktop OpenGL and Android OpenGL ES shader paths.
-- Kotlin only as a future Android application wrapper.
+- C++20 for shared game systems and simulation.
+- SDL3 3.4.20 for windows, input, audio devices and platform lifecycle.
+- OpenGL on desktop and OpenGL ES on Android.
 - CMake as the single native build system.
+- Minimal Java Activity only to host SDL on Android; no gameplay logic is placed in Java/Kotlin.
 
-SDL is fetched and pinned by CMake FetchContent at release-3.4.20. Vendor source is not copied into this repository.
+SDL3 is fetched and pinned by CMake FetchContent. Vendor source is not copied into this repository.
 
-## Windows build
+## Windows desktop build
 
-Requirements:
-- Visual Studio C++ desktop workload (MSVC x64).
-- CMake and Ninja.
-- Git and internet access on the first configure to fetch SDL3.
+Requirements: Visual Studio C++ desktop workload, CMake, Ninja, Git.
 
 From a Visual Studio Developer PowerShell:
 
@@ -31,30 +28,50 @@ From a regular PowerShell, initialize the Visual Studio environment first:
     cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release
     cmake --build build
 
+## Android arm64 build
+
+Requirements: JDK 21, Android SDK Platform 36, NDK 28.2.13676358, CMake 3.31.5 and the included Gradle wrapper.
+
+Set the SDK path, then build from the Android project:
+
+    $env:ANDROID_SDK_ROOT = "$env:LOCALAPPDATA\Android\Sdk"
+    $env:ANDROID_HOME = $env:ANDROID_SDK_ROOT
+    cd android
+    .\gradlew.bat assembleDebug
+
+When SDL3 3.4.20 source is already checked out locally, avoid a second FetchContent clone by supplying:
+
+    .\gradlew.bat assembleDebug -PSDL3_SOURCE_DIR="C:/path/to/SDL"
+
+The debug APK is written to:
+
+    android/app/build/outputs/apk/debug/app-debug.apk
+
+The Android target currently packages only `arm64-v8a`, uses minSdk 24, SDL3 shared library plus `libmain.so`, OpenGL ES 2.0 context, and landscape orientation. Desktop builds continue to use static SDL3.
+
 ## Tests
 
     cmake --build build --target pd_core_smoke
     ctest --test-dir build --output-on-failure
 
-## Controls
+## Controls and current limits
 
-- W, A, S, D — move.
-- Shift — sprint.
-- Left / Right arrows — turn.
-- Escape — quit.
+Desktop keyboard controls: W/A/S/D move, Shift sprint, Left/Right arrows turn, Escape quit.
+
+The current Android bootstrap successfully launches the renderer, but it does not yet have an on-screen touch HUD. Touch movement, camera-look gestures, gameplay scene geometry, enemies and weapons are still future work. The current image is a procedural renderer validation scene, not the finished game.
 
 ## Layout
 
     core/       Platform-independent game simulation.
     renderer/   Shared OpenGL renderer and GL entry-point loader.
     platform/   SDL3 platform integration.
-    desktop/    Windows/Linux desktop entry point.
-    android/    Reserved for Android wrapper and NDK build.
+    desktop/    Desktop entry point.
+    android/    SDL Activity, Gradle project and Android native target.
     assets/     Game assets and shader sources.
-    docs/       Architecture and migration notes.
+    docs/       Architecture, parity and build notes.
 
 ## Current milestone
 
-0.1.0-native-bootstrap: SDL3 window, OpenGL context, procedural cyberpunk scene and fixed-step C++ simulation.
+0.1.0-native-bootstrap: SDL3 app lifecycle, OpenGL/OpenGL ES shader initialization, procedural cyberpunk test scene and fixed-step C++ simulation.
 
-The existing Kotlin project remains the reference implementation while systems are ported and verified one at a time.
+The original Kotlin project remains the behavioral reference while game systems are ported and verified incrementally.

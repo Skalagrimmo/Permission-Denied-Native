@@ -14,8 +14,12 @@
 /android/.cxx/
 /android/build/
 /android/app/build/
+/android/pd_native_screen*.png
 *.user
 *.suo
 *.swp
 .DS_Store
 Thumbs.db
+
+/android/.gradle/
+/android/app/.cxx/

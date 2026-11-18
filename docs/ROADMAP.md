@@ -30,11 +30,13 @@
 - [ ] Add save/load tests.
 
 ## Phase 4 — Android
-- [ ] Install/configure Android NDK and CMake packages.
-- [ ] Add SDL3 Android application integration.
-- [ ] Add thin Kotlin Activity wrapper only if required by the application shell.
-- [ ] Build arm64-v8a first; evaluate armeabi-v7a separately.
-- [ ] Verify touch HUD, lifecycle pause/resume, audio focus and save migration.
+- [x] Install/configure Android NDK and CMake packages.
+- [x] Add SDL3 Android application integration with a thin Java Activity shell.
+- [x] Build and install an arm64-v8a APK on a physical Samsung SM-J710F.
+- [x] Verify SDL_main resolution and OpenGL ES renderer startup in landscape.
+- [ ] Add touch HUD and camera-look gestures.
+- [ ] Verify lifecycle pause/resume, audio focus and save migration.
+- [ ] Evaluate armeabi-v7a separately.
 
 ## Phase 5 — Performance and release
 - [ ] Profile Windows and Android with the same scene and simulation.
