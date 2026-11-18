@@ -48,23 +48,27 @@ void main() {
     vec3 skyBottom = vec3(0.075, 0.025, 0.095);
     vec3 color = mix(skyBottom, skyTop, smoothstep(0.0, horizon, uv.y));
 
-    float column = floor(uv.x * 25.0);
+    // The distant skyline is a panorama: yaw rotates it across the screen too.
+    float panoramaU = fract(uv.x + uYaw * 0.15915494309);
+    float column = floor(panoramaU * 25.0);
     float height = 0.045 + hash(column + 7.0) * 0.22;
     float building = step(horizon - height, uv.y) * step(uv.y, horizon);
-    float windowNoise = step(0.82, hash(floor(uv.x * 92.0) + floor(uv.y * 54.0) * 13.0));
+    float windowNoise = step(0.82, hash(floor(panoramaU * 92.0) + floor(uv.y * 54.0) * 13.0));
     vec3 buildingColor = vec3(0.025, 0.035, 0.072) + vec3(0.02, 0.13, 0.17) * windowNoise;
     color = mix(color, buildingColor, building);
 
     if (uv.y < horizon) {
         float depth = max(horizon - uv.y, 0.012);
-        // The validation grid now reacts to player translation and camera yaw.
-        // Camera motion shifts the static world in the opposite screen direction.
-        float perspectiveX = (uv.x - 0.5) / depth
-                           - (uPlayerX - 2.5) * 0.34
-                           - sin(uYaw) * 0.72;
-        float perspectiveY = 1.0 / depth
-                           - (uPlayerZ - 2.5) * 0.38
-                           - (cos(uYaw) - 1.0) * 0.22;
+        // Cast a view ray, rotate it by camera yaw, then sample the static world grid.
+        // Player translation offsets world coordinates; yaw rotates both axes together.
+        float cameraX = (uv.x - 0.5) / depth;
+        float cameraZ = 1.0 / depth;
+        float yawCos = cos(uYaw);
+        float yawSin = sin(uYaw);
+        float perspectiveX = cameraX * yawCos - cameraZ * yawSin
+                           - (uPlayerX - 2.5) * 0.34;
+        float perspectiveY = cameraX * yawSin + cameraZ * yawCos
+                           - (uPlayerZ - 2.5) * 0.38;
         float gridX = 1.0 - smoothstep(0.018, 0.045, abs(fract(perspectiveX * 0.34) - 0.5));
         float gridY = 1.0 - smoothstep(0.018, 0.05, abs(fract(perspectiveY * 0.055) - 0.5));
         float grid = max(gridX, gridY);
@@ -157,23 +161,27 @@ void main() {
     vec3 skyBottom = vec3(0.075, 0.025, 0.095);
     vec3 color = mix(skyBottom, skyTop, smoothstep(0.0, horizon, uv.y));
 
-    float column = floor(uv.x * 25.0);
+    // The distant skyline is a panorama: yaw rotates it across the screen too.
+    float panoramaU = fract(uv.x + uYaw * 0.15915494309);
+    float column = floor(panoramaU * 25.0);
     float height = 0.045 + hash(column + 7.0) * 0.22;
     float building = step(horizon - height, uv.y) * step(uv.y, horizon);
-    float windowNoise = step(0.82, hash(floor(uv.x * 92.0) + floor(uv.y * 54.0) * 13.0));
+    float windowNoise = step(0.82, hash(floor(panoramaU * 92.0) + floor(uv.y * 54.0) * 13.0));
     vec3 buildingColor = vec3(0.025, 0.035, 0.072) + vec3(0.02, 0.13, 0.17) * windowNoise;
     color = mix(color, buildingColor, building);
 
     if (uv.y < horizon) {
         float depth = max(horizon - uv.y, 0.012);
-        // The validation grid now reacts to player translation and camera yaw.
-        // Camera motion shifts the static world in the opposite screen direction.
-        float perspectiveX = (uv.x - 0.5) / depth
-                           - (uPlayerX - 2.5) * 0.34
-                           - sin(uYaw) * 0.72;
-        float perspectiveY = 1.0 / depth
-                           - (uPlayerZ - 2.5) * 0.38
-                           - (cos(uYaw) - 1.0) * 0.22;
+        // Cast a view ray, rotate it by camera yaw, then sample the static world grid.
+        // Player translation offsets world coordinates; yaw rotates both axes together.
+        float cameraX = (uv.x - 0.5) / depth;
+        float cameraZ = 1.0 / depth;
+        float yawCos = cos(uYaw);
+        float yawSin = sin(uYaw);
+        float perspectiveX = cameraX * yawCos - cameraZ * yawSin
+                           - (uPlayerX - 2.5) * 0.34;
+        float perspectiveY = cameraX * yawSin + cameraZ * yawCos
+                           - (uPlayerZ - 2.5) * 0.38;
         float gridX = 1.0 - smoothstep(0.018, 0.045, abs(fract(perspectiveX * 0.34) - 0.5));
         float gridY = 1.0 - smoothstep(0.018, 0.05, abs(fract(perspectiveY * 0.055) - 0.5));
         float grid = max(gridX, gridY);

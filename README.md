@@ -63,7 +63,7 @@ Android touchscreen controls:
 - Entire right half: horizontal and vertical camera look only; it never generates movement input.
 - Enlarged lower-right touch zone: hold to sprint. Touching it also keeps the right-side camera-look gesture active, so sprint and look can be combined.
 
-Touch and keyboard input feed the same native `InputState`; touch-look deltas are applied on the fixed simulation step. The Android HUD is drawn by the shared GLSL renderer. The current scene is still a procedural renderer validation scene, not the finished game; generated world geometry, enemies, combat, hacking and gameplay audio remain future work.
+Touch and keyboard input feed the same native `InputState`; touch-look deltas are applied on the fixed simulation step. Camera yaw rotates the procedural view rays across both ground-grid axes and shifts the distant skyline, so look is visually distinct from player strafing. The Android HUD is drawn by the shared GLSL renderer. The current scene is still a procedural renderer validation scene, not the finished game; generated world geometry, enemies, combat, hacking and gameplay audio remain future work.
 
 ## Layout
 

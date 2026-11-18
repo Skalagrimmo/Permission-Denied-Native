@@ -16,9 +16,11 @@ Device feedback identified two separate issues:
 - The virtual stick's gameplay movement was fully inverted. The visual stick knob still follows the finger, but the two stick axes are now negated only when translated into the native movement input.
 - A touch inside the enlarged sprint hit area returned early and never became a camera-look gesture. Right-side touches are now always assigned to camera look; a touch within the sprint target additionally holds sprint. The right half never creates movement input. The left stick is the only movement zone.
 
-The procedural floor-grid projection also uses the opposite sign from camera/player movement so the static world appears to move against camera motion.
+The procedural scene now uses a view-ray projection: each ground ray is rotated by camera yaw before sampling both world-grid axes. This makes horizontal look rotate the perspective grid instead of shifting it like player strafing. The distant skyline panorama is also shifted by yaw so the horizon moves opposite to the viewing direction.
 
 Vertical swipe is pitch input. An upward swipe raises the view; pitch is clamped to +/-45 degrees in the native game state and moves the horizon in the shader.
+
+Latest J710F visual smoke test: a horizontal right-side swipe changed both the grid orientation and skyline position between before/after screenshots. Android GLSL compiled and linked without errors.
 
 ## Device verification
 
