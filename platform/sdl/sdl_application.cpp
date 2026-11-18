@@ -39,7 +39,9 @@ struct TouchControls {
     float move_x = 0.0F;
     float move_y = 0.0F;
     float last_look_x = 0.0F;
+    float last_look_y = 0.0F;
     float pending_look_radians = 0.0F;
+    float pending_look_pitch_radians = 0.0F;
     bool sprint = false;
 };
 
@@ -104,7 +106,8 @@ void handle_finger_down(
     // Sprint button: fixed at the lower-right corner.
     const float sprint_dx = screen_x - aspect * 0.88F;
     const float sprint_dy = screen_y - 0.21F;
-    if (!touch.sprint_finger.active && std::sqrt(sprint_dx * sprint_dx + sprint_dy * sprint_dy) <= 0.135F) {
+    // Generous touch target: the hit area is much larger than the visible icon.
+    if (!touch.sprint_finger.active && std::sqrt(sprint_dx * sprint_dx + sprint_dy * sprint_dy) <= 0.23F) {
         touch.sprint_finger = {true, finger.fingerID};
         touch.sprint = true;
         SDL_Log("Touch sprint down: id=%lld", static_cast<long long>(finger.fingerID));
@@ -124,8 +127,9 @@ void handle_finger_down(
     if (!touch.look_finger.active && screen_x >= aspect * 0.45F) {
         touch.look_finger = {true, finger.fingerID};
         touch.last_look_x = finger.x;
-        SDL_Log("Touch look down: id=%lld x=%.3f",
-            static_cast<long long>(finger.fingerID), finger.x);
+        touch.last_look_y = finger.y;
+        SDL_Log("Touch look down: id=%lld x=%.3f y=%.3f",
+            static_cast<long long>(finger.fingerID), finger.x, finger.y);
     }
 }
 
@@ -136,8 +140,12 @@ void handle_finger_motion(TouchControls& touch, const SDL_TouchFingerEvent& fing
 
     if (touch.look_finger.active && touch.look_finger.id == finger.fingerID) {
         const float delta_x = finger.x - touch.last_look_x;
+        const float delta_y = finger.y - touch.last_look_y;
         touch.pending_look_radians += delta_x * kTouchLookRadiansPerScreen;
+        // Screen Y grows downward, so an upward swipe looks upward.
+        touch.pending_look_pitch_radians -= delta_y * kTouchLookRadiansPerScreen;
         touch.last_look_x = finger.x;
+        touch.last_look_y = finger.y;
     }
 }
 
@@ -298,16 +306,21 @@ int SdlApplication::run() {
         const float look_delta_per_step = pending_steps > 0
             ? touch.pending_look_radians / static_cast<float>(pending_steps)
             : 0.0F;
+        const float pitch_delta_per_step = pending_steps > 0
+            ? touch.pending_look_pitch_radians / static_cast<float>(pending_steps)
+            : 0.0F;
         int executed_steps = 0;
         while (accumulator >= kFixedStep) {
             auto input = make_input(keys, touch);
             input.look_delta_radians = look_delta_per_step;
+            input.look_delta_pitch_radians = pitch_delta_per_step;
             game.update(input, static_cast<float>(kFixedStep));
             accumulator -= kFixedStep;
             ++executed_steps;
         }
         if (executed_steps > 0) {
             touch.pending_look_radians = 0.0F;
+            touch.pending_look_pitch_radians = 0.0F;
         }
 
         int width = 0;

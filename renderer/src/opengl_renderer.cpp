@@ -28,6 +28,7 @@ uniform float uTime;
 uniform float uPlayerX;
 uniform float uPlayerZ;
 uniform float uYaw;
+uniform float uPitch;
 uniform float uAspect;
 uniform float uMoveX;
 uniform float uMoveY;
@@ -41,7 +42,8 @@ float hash(float n) {
 
 void main() {
     vec2 uv = vUv;
-    float horizon = 0.43;
+    // Positive pitch looks upward, moving the horizon lower in the frame.
+    float horizon = clamp(0.43 - uPitch * 0.35, 0.22, 0.64);
     vec3 skyTop = vec3(0.012, 0.018, 0.042);
     vec3 skyBottom = vec3(0.075, 0.025, 0.095);
     vec3 color = mix(skyBottom, skyTop, smoothstep(0.0, horizon, uv.y));
@@ -56,12 +58,13 @@ void main() {
     if (uv.y < horizon) {
         float depth = max(horizon - uv.y, 0.012);
         // The validation grid now reacts to player translation and camera yaw.
+        // Camera motion shifts the static world in the opposite screen direction.
         float perspectiveX = (uv.x - 0.5) / depth
-                           + (uPlayerX - 2.5) * 0.34
-                           + sin(uYaw) * 0.72;
+                           - (uPlayerX - 2.5) * 0.34
+                           - sin(uYaw) * 0.72;
         float perspectiveY = 1.0 / depth
-                           + (uPlayerZ - 2.5) * 0.38
-                           + (cos(uYaw) - 1.0) * 0.22;
+                           - (uPlayerZ - 2.5) * 0.38
+                           - (cos(uYaw) - 1.0) * 0.22;
         float gridX = 1.0 - smoothstep(0.018, 0.045, abs(fract(perspectiveX * 0.34) - 0.5));
         float gridY = 1.0 - smoothstep(0.018, 0.05, abs(fract(perspectiveY * 0.055) - 0.5));
         float grid = max(gridX, gridY);
@@ -99,9 +102,9 @@ void main() {
 
     vec2 sprintCenter = vec2(aspect * 0.88, 0.21);
     float sprintDistance = length(hudPosition - sprintCenter);
-    float sprintDisk = 1.0 - smoothstep(0.092, 0.108, sprintDistance);
-    float sprintRing = smoothstep(0.096, 0.103, sprintDistance)
-                     * (1.0 - smoothstep(0.116, 0.124, sprintDistance));
+    float sprintDisk = 1.0 - smoothstep(0.118, 0.136, sprintDistance);
+    float sprintRing = smoothstep(0.132, 0.140, sprintDistance)
+                     * (1.0 - smoothstep(0.146, 0.154, sprintDistance));
     vec3 sprintColor = mix(vec3(0.035, 0.105, 0.13), vec3(0.08, 0.53, 0.57), uSprintActive);
     color = mix(color, sprintColor, sprintDisk * uTouchVisible * 0.84);
     color += vec3(0.04, 0.57, 0.65) * sprintRing * uTouchVisible * 0.85;
@@ -134,6 +137,7 @@ uniform float uTime;
 uniform float uPlayerX;
 uniform float uPlayerZ;
 uniform float uYaw;
+uniform float uPitch;
 uniform float uAspect;
 uniform float uMoveX;
 uniform float uMoveY;
@@ -147,7 +151,8 @@ float hash(float n) {
 
 void main() {
     vec2 uv = vUv;
-    float horizon = 0.43;
+    // Positive pitch looks upward, moving the horizon lower in the frame.
+    float horizon = clamp(0.43 - uPitch * 0.35, 0.22, 0.64);
     vec3 skyTop = vec3(0.012, 0.018, 0.042);
     vec3 skyBottom = vec3(0.075, 0.025, 0.095);
     vec3 color = mix(skyBottom, skyTop, smoothstep(0.0, horizon, uv.y));
@@ -162,12 +167,13 @@ void main() {
     if (uv.y < horizon) {
         float depth = max(horizon - uv.y, 0.012);
         // The validation grid now reacts to player translation and camera yaw.
+        // Camera motion shifts the static world in the opposite screen direction.
         float perspectiveX = (uv.x - 0.5) / depth
-                           + (uPlayerX - 2.5) * 0.34
-                           + sin(uYaw) * 0.72;
+                           - (uPlayerX - 2.5) * 0.34
+                           - sin(uYaw) * 0.72;
         float perspectiveY = 1.0 / depth
-                           + (uPlayerZ - 2.5) * 0.38
-                           + (cos(uYaw) - 1.0) * 0.22;
+                           - (uPlayerZ - 2.5) * 0.38
+                           - (cos(uYaw) - 1.0) * 0.22;
         float gridX = 1.0 - smoothstep(0.018, 0.045, abs(fract(perspectiveX * 0.34) - 0.5));
         float gridY = 1.0 - smoothstep(0.018, 0.05, abs(fract(perspectiveY * 0.055) - 0.5));
         float grid = max(gridX, gridY);
@@ -205,9 +211,9 @@ void main() {
 
     vec2 sprintCenter = vec2(aspect * 0.88, 0.21);
     float sprintDistance = length(hudPosition - sprintCenter);
-    float sprintDisk = 1.0 - smoothstep(0.092, 0.108, sprintDistance);
-    float sprintRing = smoothstep(0.096, 0.103, sprintDistance)
-                     * (1.0 - smoothstep(0.116, 0.124, sprintDistance));
+    float sprintDisk = 1.0 - smoothstep(0.118, 0.136, sprintDistance);
+    float sprintRing = smoothstep(0.132, 0.140, sprintDistance)
+                     * (1.0 - smoothstep(0.146, 0.154, sprintDistance));
     vec3 sprintColor = mix(vec3(0.035, 0.105, 0.13), vec3(0.08, 0.53, 0.57), uSprintActive);
     color = mix(color, sprintColor, sprintDisk * uTouchVisible * 0.84);
     color += vec3(0.04, 0.57, 0.65) * sprintRing * uTouchVisible * 0.85;
@@ -283,6 +289,7 @@ struct OpenGLRenderer::Impl {
     gl::GLint player_x_location = -1;
     gl::GLint player_z_location = -1;
     gl::GLint yaw_location = -1;
+    gl::GLint pitch_location = -1;
     gl::GLint aspect_location = -1;
     gl::GLint move_x_location = -1;
     gl::GLint move_y_location = -1;
@@ -336,6 +343,7 @@ bool OpenGLRenderer::initialize() {
     impl_->player_x_location = api.GetUniformLocation(impl_->program, "uPlayerX");
     impl_->player_z_location = api.GetUniformLocation(impl_->program, "uPlayerZ");
     impl_->yaw_location = api.GetUniformLocation(impl_->program, "uYaw");
+    impl_->pitch_location = api.GetUniformLocation(impl_->program, "uPitch");
     impl_->aspect_location = api.GetUniformLocation(impl_->program, "uAspect");
     impl_->move_x_location = api.GetUniformLocation(impl_->program, "uMoveX");
     impl_->move_y_location = api.GetUniformLocation(impl_->program, "uMoveY");
@@ -373,6 +381,7 @@ void OpenGLRenderer::render(
     if (impl_->player_x_location >= 0) api.Uniform1f(impl_->player_x_location, state.player.x);
     if (impl_->player_z_location >= 0) api.Uniform1f(impl_->player_z_location, state.player.z);
     if (impl_->yaw_location >= 0) api.Uniform1f(impl_->yaw_location, state.player.yaw_radians);
+    if (impl_->pitch_location >= 0) api.Uniform1f(impl_->pitch_location, state.player.pitch_radians);
     if (impl_->aspect_location >= 0) {
         api.Uniform1f(impl_->aspect_location, static_cast<float>(impl_->width) /
             static_cast<float>(impl_->height));

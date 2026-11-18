@@ -7,6 +7,7 @@ struct InputState {
     float move_z = 0.0F;
     float look_x = 0.0F;
     float look_delta_radians = 0.0F; // One-shot relative-look input, used by touch.
+    float look_delta_pitch_radians = 0.0F;
     bool sprint = false;
 };
 
@@ -14,6 +15,7 @@ struct PlayerState {
     float x = 2.5F;
     float z = 2.5F;
     float yaw_radians = 0.0F;
+    float pitch_radians = 0.0F;
     float speed = 3.0F;
 };
 

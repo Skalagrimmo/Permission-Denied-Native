@@ -57,11 +57,19 @@ int main() {
     game.update(input, 1.0F / 60.0F);
     assert(std::abs(game.state().player.yaw_radians - yaw_before_touch - 0.25F) < 0.0001F);
 
+    input = {};
+    input.look_delta_pitch_radians = 0.5F;
+    game.update(input, 1.0F / 60.0F);
+    assert(std::abs(game.state().player.pitch_radians - 0.5F) < 0.0001F);
+    input.look_delta_pitch_radians = 1.0F;
+    game.update(input, 1.0F / 60.0F);
+    assert(std::abs(game.state().player.pitch_radians - 0.78539816339F) < 0.0001F);
+
     const double elapsed_before_clamp = game.state().elapsed_seconds;
     game.update(InputState{}, 1.0F);
     const double clamped_step = game.state().elapsed_seconds - elapsed_before_clamp;
     assert(clamped_step <= 0.100001);
-    assert(game.state().simulation_ticks == 6);
+    assert(game.state().simulation_ticks == 8);
 
     // Kotlin Vector3 / MathUtils parity checks.
     Vector3 vector{3.0F, 4.0F, 12.0F};

@@ -1,42 +1,38 @@
 # Android Touch Controls — 2026-11-18
 
-## Result
-
-Added the first touchscreen control layer to the native C++ Android build and verified ADB-injected touch events on a physical Samsung SM-J710F.
-
-The native game loop remains shared. Touch input is translated into the same `pd::core::InputState` used by desktop keyboard controls; no gameplay movement logic was moved into Java.
-
-## Layout
+## Control layout
 
 - Lower-left fixed virtual stick: forward/back and strafe.
-- Right half of the screen: relative horizontal swipe to rotate the view.
-- Lower-right circular button: hold to sprint.
+- Right half of the screen: relative swipe for both yaw and pitch.
+- Lower-right circular sprint button with a deliberately generous touch target.
 - HUD is drawn by the existing full-screen GLSL fragment shader and appears only on Android.
 - Stick uses a 0.10 radial deadzone with remapped output to avoid slow drift around its center.
-- Touch look deltas are distributed across the pending fixed simulation steps, avoiding frame-rate-dependent camera sensitivity.
+- Touch yaw and pitch deltas are distributed across pending fixed simulation steps, avoiding frame-rate-dependent camera sensitivity.
+- Sprint touch radius is 0.23 screen-height units (about 166 px radius / 331 px diameter at 720p); the visible button is smaller than its hit area.
+
+## Direction correction
+
+Initial device feedback identified that the scene appeared to move in the same direction as the player/camera. The touch axes themselves were already sending the intended direction; the inversion was in the procedural floor-grid projection. Player translation and yaw offsets in the shader have therefore been changed to subtract camera movement from static-world coordinates. The movement input mapping was intentionally left unchanged.
+
+Vertical swipe was added as pitch input. An upward swipe raises the view; pitch is clamped to +/-45 degrees in the native game state and moves the horizon in the shader.
 
 ## Device verification
 
 Device: Samsung SM-J710F, Android 10, Exynos 7870, Mali-T830.
 
-Observed on device:
+Previously verified on device:
+- Android shader compiles and links.
+- Left-stick events reach the full forward axis.
+- Right-side swipe emits non-zero FINGER_MOTION deltas.
+- Sprint down/up events are received.
+- Core smoke suite was compiled for arm64-v8a and executed on device with exit code 0.
 
-- The Android GLSL shader compiled and linked; no shader/link errors appeared in logcat.
-- Both HUD controls rendered in landscape over the existing cyberpunk validation scene.
-- ADB-injected left-stick gesture reached final axis `(0.00, 1.00)`.
-- ADB-injected right-side swipe produced a sequence of non-zero `FINGER_MOTION` deltas; the scene's perspective grid visibly changed orientation.
-- ADB-injected lower-right press generated sprint down/up events.
-- The native C++ `core_smoke` suite was cross-compiled for arm64-v8a with NDK 28.2 and executed directly on the J710F. Process exited with code 0, including the new one-shot touch-look angle regression assertion.
-
-These were software-injected touch events routed through the target phone's Android input stack. Direct hand-feel tuning on the touchscreen and simultaneous multi-finger testing remain to be done.
+Current revision rebuilt and installed on the SM-J710F:
+- A sprint tap at screen coordinate (1000, 580), which was outside the previous 0.135-radius hit area, now triggers sprint down/up inside the expanded 0.23-radius area.
+- A diagonal right-side swipe (up and right) changes yaw and pitch; the captured screen shows the horizon moving lower after looking upward.
+- The GLSL renderer starts without shader/link errors.
+- The updated arm64 core smoke suite executes on-device with exit code 0, including pitch clamping at +/-45 degrees.
 
 ## Known limits
 
-This is an input/HUD milestone, not yet a complete playable game. The rendered world is still the procedural validation scene; there is no generated district mesh, enemy AI, weapon/combat loop, hacking interaction, or gameplay audio. Player translation currently shifts the validation floor grid; full collision integration into the live game loop is still separate work.
-
-## Next steps
-
-1. Tune stick deadzone and look sensitivity by direct hand testing on the device.
-2. Verify simultaneous move + look + sprint with multiple fingers.
-3. Add pause/resume handling and confirm controls reset correctly after app focus loss.
-4. Replace the validation scene with native generated world geometry, then connect movement to world collision.
+This remains an input/HUD milestone, not a complete game. The rendered world is a procedural validation scene; generated district geometry, collision integration in the live loop, enemies, weapon/combat systems, hacking and gameplay audio are still future work. Direct hand-feel tuning and simultaneous multi-finger testing remain open.

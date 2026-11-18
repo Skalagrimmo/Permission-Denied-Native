@@ -20,6 +20,11 @@ void Game::update(const InputState& input, float delta_seconds) noexcept {
     if (dt <= 0.0F) return;
 
     state_.player.yaw_radians += input.look_x * kTurnSpeed * dt + input.look_delta_radians;
+    constexpr float kMaxPitchRadians = 0.78539816339F;
+    state_.player.pitch_radians = std::clamp(
+        state_.player.pitch_radians + input.look_delta_pitch_radians,
+        -kMaxPitchRadians,
+        kMaxPitchRadians);
     if (state_.player.yaw_radians >= kTwoPi) {
         state_.player.yaw_radians = std::fmod(state_.player.yaw_radians, kTwoPi);
     } else if (state_.player.yaw_radians < 0.0F) {

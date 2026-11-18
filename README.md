@@ -60,8 +60,8 @@ Desktop keyboard controls: W/A/S/D move, Shift sprint, Left/Right arrows turn, E
 
 Android touchscreen controls:
 - Fixed virtual stick in the lower-left corner: move and strafe.
-- Swipe anywhere on the right half: rotate the view.
-- Hold the lower-right button: sprint.
+- Swipe anywhere on the right half: rotate the view horizontally and vertically.
+- Hold the enlarged lower-right touch zone: sprint (the hit target is larger than the visible button).
 
 Touch and keyboard input feed the same native `InputState`; touch-look deltas are applied on the fixed simulation step. The Android HUD is drawn by the shared GLSL renderer. The current scene is still a procedural renderer validation scene, not the finished game; generated world geometry, enemies, combat, hacking and gameplay audio remain future work.
 
