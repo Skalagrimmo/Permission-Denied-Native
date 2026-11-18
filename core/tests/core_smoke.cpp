@@ -1,6 +1,7 @@
 #include "pd/core/game.hpp"
 #include "pd/core/math.hpp"
 #include "pd/core/models.hpp"
+#include "pd/core/movement.hpp"
 #include "pd/core/world.hpp"
 
 // Keep assertions enabled for this test translation unit in Release builds.
@@ -182,6 +183,63 @@ int main() {
     assert(generated.valid());
     generated.grid.reset(2, 2, TileType::floor);
     assert(!generated.valid());
+
+    // Kotlin PlayerMovementController parity checks.
+    const PlayerMovementController movement{};
+    assert(std::abs(movement.player_radius() - 0.28F) < 0.0001F);
+    assert(std::abs(movement.walk_speed() - 3.0F) < 0.0001F);
+    assert(std::abs(movement.sprint_speed() - 4.8F) < 0.0001F);
+    assert(std::abs(movement.crouch_speed() - 1.5F) < 0.0001F);
+    assert(movement.min_pitch() == -45.0F && movement.max_pitch() == 45.0F);
+
+    const auto normalized_input = movement.normalize_input(1.0F, 1.0F);
+    assert(std::abs(normalized_input.first - 0.70710678F) < 0.0001F);
+    assert(std::abs(normalized_input.second - 0.70710678F) < 0.0001F);
+    const auto analog_input = movement.normalize_input(0.5F, 0.25F);
+    assert(analog_input.first == 0.5F && analog_input.second == 0.25F);
+
+    const auto forward_velocity = movement.compute_velocity(0.0F, 1.0F, 0.0F, 3.0F, 0.5F);
+    assert(std::abs(forward_velocity.first) < 0.0001F);
+    assert(std::abs(forward_velocity.second - 1.5F) < 0.0001F);
+    const auto turned_velocity = movement.compute_velocity(0.0F, 1.0F, 90.0F, 3.0F, 0.5F);
+    assert(std::abs(turned_velocity.first - 1.5F) < 0.0001F);
+    assert(std::abs(turned_velocity.second) < 0.0001F);
+    const auto sprint_velocity = movement.compute_velocity(0.0F, 1.0F, 0.0F, movement.sprint_speed(), 0.5F);
+    assert(std::abs(sprint_velocity.second - 2.4F) < 0.0001F);
+
+    const auto turned_angles = movement.update_view_angles(350.0F, 40.0F, 20.0F, 20.0F);
+    assert(std::abs(turned_angles.first - 10.0F) < 0.0001F);
+    assert(turned_angles.second == 45.0F);
+    const auto reverse_angles = movement.update_view_angles(5.0F, -40.0F, -20.0F, -20.0F);
+    assert(std::abs(reverse_angles.first - 345.0F) < 0.0001F);
+    assert(reverse_angles.second == -45.0F);
+
+    GeneratedWorld collision_world{};
+    collision_world.width = 12;
+    collision_world.height = 12;
+    collision_world.grid.reset(12, 12, TileType::floor);
+    collision_world.heights.reset(12, 12, 0.0F);
+    collision_world.colors.reset(12, 12, 0xFF080E17U);
+    for (int z = 0; z < collision_world.height; ++z) {
+        collision_world.grid(5, z) = TileType::wall_concrete;
+    }
+    assert(collision_world.valid());
+    assert(!movement.check_collision_with_world(4.5F, 3.5F, collision_world));
+    assert(movement.check_collision_with_world(4.8F, 3.5F, collision_world));
+
+    const auto blocked = movement.resolve_grid_movement(
+        4.5F, 3.5F, 0.5F, 0.0F, collision_world);
+    assert(blocked.first > 4.5F && blocked.first < 4.72F);
+    assert(std::abs(blocked.second - 3.5F) < 0.0001F);
+
+    const auto wall_slide = movement.resolve_grid_movement(
+        4.5F, 3.5F, 0.5F, 0.8F, collision_world);
+    assert(wall_slide.first > 4.5F && wall_slide.first < 4.72F);
+    assert(std::abs(wall_slide.second - 4.3F) < 0.0001F);
+
+    const auto boundary_clamp = movement.resolve_grid_movement(
+        1.0F, 6.0F, -5.0F, 0.0F, collision_world);
+    assert(std::abs(boundary_clamp.first - movement.player_radius()) < 0.0001F);
 
     return 0;
 }

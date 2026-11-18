@@ -26,7 +26,10 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(SDL3)
 
-add_library(pd_core STATIC core/src/game.cpp)
+add_library(pd_core STATIC
+    core/src/game.cpp
+    core/src/movement.cpp
+)
 target_include_directories(pd_core PUBLIC core/include)
 target_compile_features(pd_core PUBLIC cxx_std_20)
 

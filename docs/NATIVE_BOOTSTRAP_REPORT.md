@@ -40,6 +40,9 @@ This is a native engine bootstrap, not a full port of the original game yet. The
 - Added `world.hpp` for rooms, doors, terminals, loot, generated-world metadata and an X-major `Grid2D` container.
 - Added model tests for weapon defaults, enemy stat defaults, tile flags, room intersection, door locking and X/Z grid indexing.
 - Documented the model contracts in `docs/CORE_MODEL_PARITY.md`.
+- Added `movement.hpp` / `movement.cpp` with normalized input, yaw-based velocity, pitch clamp, circle-to-tile collision and axis sliding.
+- Preserved the Kotlin movement tuning: radius 0.28, walk 3.0, sprint 4.8, crouch 1.5 and four collision bisection steps.
+- Documented movement parity and collision regression coverage in `docs/MOVEMENT_PARITY.md`.
 
 ## Original project preservation
 

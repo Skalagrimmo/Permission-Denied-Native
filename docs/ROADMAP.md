@@ -12,7 +12,7 @@
 - [x] Port common vector/math helpers with regression tests.
 - [x] Port common game and world data models.
 - [ ] Port deterministic district generation and seeded RNG.
-- [ ] Port movement, collision and sliding resolution.
+- [x] Port movement, collision and sliding resolution.
 - [ ] Port enemy state model and patrol/chase/alert logic.
 - [ ] Port weapons, damage, alarms and hacking.
 - [ ] Add deterministic regression tests against documented Kotlin behavior.
