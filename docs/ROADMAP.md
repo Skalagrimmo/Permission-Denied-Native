@@ -10,7 +10,7 @@
 
 ## Phase 1 — Core parity
 - [x] Port common vector/math helpers with regression tests.
-- [ ] Port common model types (tiles, districts, enemies and interactables).
+- [x] Port common game and world data models.
 - [ ] Port deterministic district generation and seeded RNG.
 - [ ] Port movement, collision and sliding resolution.
 - [ ] Port enemy state model and patrol/chase/alert logic.

@@ -34,8 +34,12 @@ This is a native engine bootstrap, not a full port of the original game yet. The
 - Added `core/include/pd/core/math.hpp` with the Kotlin `Vector3` and `MathUtils` behavior.
 - Preserved the small-vector normalization threshold (`0.0001`), clamped interpolation parameter and signed angle-wrap interval `[-180°, 180°)`.
 - Extended `pd_core_smoke` with vector arithmetic, magnitude, distance, normalization, interpolation and angle-wrap regression checks.
-- Configured the smoke-test target to keep `assert` checks enabled in Release builds.
+- Kept `assert`-based smoke checks enabled in Release builds by undefining `NDEBUG` in the test translation unit.
 - Recorded the source-to-native behavior mapping in `docs/CORE_MATH_PARITY.md`.
+- Added `models.hpp` for weapon, augmentation, inventory, enemy, tile, district, ending and mission-report types.
+- Added `world.hpp` for rooms, doors, terminals, loot, generated-world metadata and an X-major `Grid2D` container.
+- Added model tests for weapon defaults, enemy stat defaults, tile flags, room intersection, door locking and X/Z grid indexing.
+- Documented the model contracts in `docs/CORE_MODEL_PARITY.md`.
 
 ## Original project preservation
 
