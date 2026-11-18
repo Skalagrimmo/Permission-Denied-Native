@@ -18,20 +18,31 @@ using GLchar = char;
 using GLsizeiptr = std::ptrdiff_t;
 
 constexpr GLenum kColorBufferBit = 0x00004000;
+constexpr GLenum kDepthBufferBit = 0x00000100;
+constexpr GLenum kDepthTest = 0x0B71;
+constexpr GLenum kLequal = 0x0203;
 constexpr GLenum kArrayBuffer = 0x8892;
 constexpr GLenum kStaticDraw = 0x88E4;
+constexpr GLenum kDynamicDraw = 0x88E8;
 constexpr GLenum kFloat = 0x1406;
+constexpr GLenum kLines = 0x0001;
 constexpr GLenum kTriangles = 0x0004;
 constexpr GLenum kVertexShader = 0x8B31;
 constexpr GLenum kFragmentShader = 0x8B30;
 constexpr GLenum kCompileStatus = 0x8B81;
 constexpr GLenum kLinkStatus = 0x8B82;
 constexpr GLenum kInfoLogLength = 0x8B84;
+constexpr GLboolean kFalse = 0;
+constexpr GLboolean kTrue = 1;
 
 struct Api {
     void (PD_GL_APIENTRY *Viewport)(GLint, GLint, GLsizei, GLsizei) = nullptr;
     void (PD_GL_APIENTRY *ClearColor)(GLfloat, GLfloat, GLfloat, GLfloat) = nullptr;
     void (PD_GL_APIENTRY *Clear)(GLenum) = nullptr;
+    void (PD_GL_APIENTRY *Enable)(GLenum) = nullptr;
+    void (PD_GL_APIENTRY *Disable)(GLenum) = nullptr;
+    void (PD_GL_APIENTRY *DepthFunc)(GLenum) = nullptr;
+    void (PD_GL_APIENTRY *DepthMask)(GLboolean) = nullptr;
     void (PD_GL_APIENTRY *GenBuffers)(GLsizei, GLuint*) = nullptr;
     void (PD_GL_APIENTRY *BindBuffer)(GLenum, GLuint) = nullptr;
     void (PD_GL_APIENTRY *BufferData)(GLenum, GLsizeiptr, const void*, GLenum) = nullptr;

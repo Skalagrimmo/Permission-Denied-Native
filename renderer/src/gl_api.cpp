@@ -20,6 +20,10 @@ bool Api::load() {
     PD_LOAD_GL(Viewport);
     PD_LOAD_GL(ClearColor);
     PD_LOAD_GL(Clear);
+    PD_LOAD_GL(Enable);
+    PD_LOAD_GL(Disable);
+    PD_LOAD_GL(DepthFunc);
+    PD_LOAD_GL(DepthMask);
     PD_LOAD_GL(GenBuffers);
     PD_LOAD_GL(BindBuffer);
     PD_LOAD_GL(BufferData);

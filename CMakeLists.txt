@@ -48,6 +48,7 @@ target_compile_features(pd_core PUBLIC cxx_std_20)
 add_library(pd_renderer STATIC
     renderer/src/gl_api.cpp
     renderer/src/opengl_renderer.cpp
+    renderer/src/vector_scene.cpp
 )
 target_include_directories(pd_renderer PUBLIC renderer/include core/include PRIVATE renderer/src)
 target_link_libraries(pd_renderer PUBLIC SDL3::SDL3)

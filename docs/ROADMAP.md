@@ -18,10 +18,13 @@
 - [ ] Add deterministic regression tests against documented Kotlin behavior.
 
 ## Phase 2 — Unified renderer
+- [x] Add a depth-tested perspective wireframe corridor as the first native vector-scene prototype.
+- [x] Reimplement the Nano-punk camera-space projection approach in the C++ renderer.
+- [x] Add world-space 5×7 ASCII signage and vector touch-HUD accents.
 - [ ] Port tile/room geometry generation.
-- [ ] Add native world mesh buffers and entity transforms.
+- [ ] Add reusable world mesh buffers and entity transforms.
 - [ ] Add lighting, fog, materials and effects.
-- [ ] Implement ASCII/CRT as renderer post-processing options.
+- [ ] Implement optional ASCII/CRT surface and post-processing modes.
 - [ ] Add renderer profiling counters and frame-time telemetry.
 
 ## Phase 3 — Audio and persistence
@@ -37,6 +40,7 @@
 - [x] Add Android touch HUD with exclusive left-stick movement, full right-half two-axis look, and enlarged sprint target.
 - [x] Verify left-only movement, right-only horizontal look, and simultaneous sprint + look in the sprint target on a physical SM-J710F.
 - [x] Correct world-grid projection signs so the scene moves opposite to camera/player motion.
+- [x] Build, install and launch the vector/ASCII hybrid renderer on the physical SM-J710F.
 - [ ] Tune touch deadzones/sensitivity from direct hand testing and test multi-touch on additional devices.
 - [ ] Verify lifecycle pause/resume, audio focus and save migration.
 - [ ] Evaluate armeabi-v7a separately.

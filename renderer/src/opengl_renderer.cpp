@@ -1,11 +1,14 @@
 #include "pd/renderer/opengl_renderer.hpp"
 
 #include "gl_api.hpp"
+#include "vector_scene.hpp"
 
 #include <SDL3/SDL.h>
 
 #include <array>
+#include <cstddef>
 #include <string>
+#include <vector>
 
 namespace pd::renderer {
 namespace {
@@ -73,7 +76,7 @@ void main() {
         float gridY = 1.0 - smoothstep(0.018, 0.05, abs(fract(perspectiveY * 0.055) - 0.5));
         float grid = max(gridX, gridY);
         float fade = 1.0 - smoothstep(0.0, 0.65, depth);
-        color = mix(vec3(0.012, 0.018, 0.034), vec3(0.035, 0.20, 0.24), grid * fade * 0.72);
+        color = mix(vec3(0.012, 0.018, 0.034), vec3(0.035, 0.20, 0.24), grid * fade * 0.28);
     }
 
     float horizonGlow = exp(-abs(uv.y - horizon) * 34.0);
@@ -186,7 +189,7 @@ void main() {
         float gridY = 1.0 - smoothstep(0.018, 0.05, abs(fract(perspectiveY * 0.055) - 0.5));
         float grid = max(gridX, gridY);
         float fade = 1.0 - smoothstep(0.0, 0.65, depth);
-        color = mix(vec3(0.012, 0.018, 0.034), vec3(0.035, 0.20, 0.24), grid * fade * 0.72);
+        color = mix(vec3(0.012, 0.018, 0.034), vec3(0.035, 0.20, 0.24), grid * fade * 0.28);
     }
 
     float horizonGlow = exp(-abs(uv.y - horizon) * 34.0);
@@ -238,6 +241,45 @@ void main() {
 )GLSL";
 #endif
 
+#if defined(PD_OPENGL_ES) && PD_OPENGL_ES
+constexpr const char* kVectorVertexShaderSource = R"GLSL(
+attribute vec3 aPosition;
+attribute vec3 aColor;
+varying vec3 vColor;
+void main() {
+    gl_Position = vec4(aPosition, 1.0);
+    vColor = aColor;
+}
+)GLSL";
+
+constexpr const char* kVectorFragmentShaderSource = R"GLSL(
+precision mediump float;
+varying vec3 vColor;
+void main() {
+    gl_FragColor = vec4(vColor, 1.0);
+}
+)GLSL";
+#else
+constexpr const char* kVectorVertexShaderSource = R"GLSL(
+#version 120
+attribute vec3 aPosition;
+attribute vec3 aColor;
+varying vec3 vColor;
+void main() {
+    gl_Position = vec4(aPosition, 1.0);
+    vColor = aColor;
+}
+)GLSL";
+
+constexpr const char* kVectorFragmentShaderSource = R"GLSL(
+#version 120
+varying vec3 vColor;
+void main() {
+    gl_FragColor = vec4(vColor, 1.0);
+}
+)GLSL";
+#endif
+
 GLuint compile_shader(Api& api, GLenum type, const char* source) {
     const GLuint shader = api.CreateShader(type);
     if (shader == 0) {
@@ -272,6 +314,7 @@ GLuint link_program(Api& api, GLuint vertex_shader, GLuint fragment_shader) {
     api.AttachShader(program, vertex_shader);
     api.AttachShader(program, fragment_shader);
     api.BindAttribLocation(program, 0, "aPosition");
+    api.BindAttribLocation(program, 1, "aColor");
     api.LinkProgram(program);
 
     GLint linked = 0;
@@ -293,6 +336,8 @@ struct OpenGLRenderer::Impl {
     gl::Api api{};
     gl::GLuint program = 0;
     gl::GLuint vertex_buffer = 0;
+    gl::GLuint vector_program = 0;
+    gl::GLuint vector_buffer = 0;
     gl::GLint time_location = -1;
     gl::GLint player_x_location = -1;
     gl::GLint player_z_location = -1;
@@ -332,6 +377,28 @@ bool OpenGLRenderer::initialize() {
     api.DeleteShader(fragment_shader);
     if (impl_->program == 0) return false;
 
+    const GLuint vector_vertex_shader = compile_shader(api, gl::kVertexShader, kVectorVertexShaderSource);
+    if (vector_vertex_shader == 0) {
+        api.DeleteProgram(impl_->program);
+        impl_->program = 0;
+        return false;
+    }
+    const GLuint vector_fragment_shader = compile_shader(api, gl::kFragmentShader, kVectorFragmentShaderSource);
+    if (vector_fragment_shader == 0) {
+        api.DeleteShader(vector_vertex_shader);
+        api.DeleteProgram(impl_->program);
+        impl_->program = 0;
+        return false;
+    }
+    impl_->vector_program = link_program(api, vector_vertex_shader, vector_fragment_shader);
+    api.DeleteShader(vector_vertex_shader);
+    api.DeleteShader(vector_fragment_shader);
+    if (impl_->vector_program == 0) {
+        api.DeleteProgram(impl_->program);
+        impl_->program = 0;
+        return false;
+    }
+
     constexpr std::array<float, 6> fullscreen_triangle{
         -1.0F, -1.0F,
          3.0F, -1.0F,
@@ -347,6 +414,8 @@ bool OpenGLRenderer::initialize() {
         gl::kStaticDraw
     );
 
+    api.GenBuffers(1, &impl_->vector_buffer);
+
     impl_->time_location = api.GetUniformLocation(impl_->program, "uTime");
     impl_->player_x_location = api.GetUniformLocation(impl_->program, "uPlayerX");
     impl_->player_z_location = api.GetUniformLocation(impl_->program, "uPlayerZ");
@@ -361,7 +430,7 @@ bool OpenGLRenderer::initialize() {
 
     impl_->initialized = true;
     resize(impl_->width, impl_->height);
-    SDL_Log("OpenGL renderer ready. Procedural cyberpunk test scene loaded.");
+    SDL_Log("OpenGL renderer ready. Vector/ASCII hybrid test scene loaded.");
     return true;
 }
 
@@ -382,7 +451,7 @@ void OpenGLRenderer::render(
     auto& api = impl_->api;
     api.Viewport(0, 0, impl_->width, impl_->height);
     api.ClearColor(0.012F, 0.015F, 0.03F, 1.0F);
-    api.Clear(gl::kColorBufferBit);
+    api.Clear(gl::kColorBufferBit | gl::kDepthBufferBit);
 
     api.UseProgram(impl_->program);
     if (impl_->time_location >= 0) api.Uniform1f(impl_->time_location, time_seconds);
@@ -411,15 +480,49 @@ void OpenGLRenderer::render(
     api.VertexAttribPointer(0, 2, gl::kFloat, 0, 0, nullptr);
     api.DrawArrays(gl::kTriangles, 0, 3);
     api.DisableVertexAttribArray(0);
+
+    // The vector pass uses Nano-punk-style camera-space projection, then draws
+    // perspective-correct wire geometry and bitmap ASCII glyphs as native GL_LINES.
+    const auto vector_vertices = detail::build_vector_scene(
+        state, impl_->width, impl_->height, touch);
+    if (!vector_vertices.empty() && impl_->vector_program != 0 && impl_->vector_buffer != 0) {
+        api.Enable(gl::kDepthTest);
+        api.DepthFunc(gl::kLequal);
+        api.DepthMask(gl::kTrue);
+        api.UseProgram(impl_->vector_program);
+        api.BindBuffer(gl::kArrayBuffer, impl_->vector_buffer);
+        api.BufferData(
+            gl::kArrayBuffer,
+            static_cast<gl::GLsizeiptr>(vector_vertices.size() * sizeof(detail::VectorVertex)),
+            vector_vertices.data(),
+            gl::kDynamicDraw
+        );
+        api.EnableVertexAttribArray(0);
+        api.EnableVertexAttribArray(1);
+        api.VertexAttribPointer(
+            0, 3, gl::kFloat, gl::kFalse, static_cast<gl::GLsizei>(sizeof(detail::VectorVertex)),
+            reinterpret_cast<const void*>(offsetof(detail::VectorVertex, x)));
+        api.VertexAttribPointer(
+            1, 3, gl::kFloat, gl::kFalse, static_cast<gl::GLsizei>(sizeof(detail::VectorVertex)),
+            reinterpret_cast<const void*>(offsetof(detail::VectorVertex, r)));
+        api.DrawArrays(gl::kLines, 0, static_cast<gl::GLsizei>(vector_vertices.size()));
+        api.DisableVertexAttribArray(0);
+        api.DisableVertexAttribArray(1);
+        api.Disable(gl::kDepthTest);
+    }
 }
 
 void OpenGLRenderer::shutdown() noexcept {
     if (!impl_ || !impl_->initialized) return;
     auto& api = impl_->api;
     if (impl_->vertex_buffer != 0) api.DeleteBuffers(1, &impl_->vertex_buffer);
+    if (impl_->vector_buffer != 0) api.DeleteBuffers(1, &impl_->vector_buffer);
     if (impl_->program != 0) api.DeleteProgram(impl_->program);
+    if (impl_->vector_program != 0) api.DeleteProgram(impl_->vector_program);
     impl_->vertex_buffer = 0;
+    impl_->vector_buffer = 0;
     impl_->program = 0;
+    impl_->vector_program = 0;
     impl_->initialized = false;
 }
 
