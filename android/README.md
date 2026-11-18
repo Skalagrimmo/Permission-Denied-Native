@@ -36,4 +36,4 @@ Output:
 - SDL created the Android surface and initialized the OpenGL ES renderer
 - Procedural cyberpunk validation scene rendered in landscape
 
-This is a renderer/lifecycle smoke test, not a full gameplay port. The Android build currently has no touch controls; keyboard controls are available when an external keyboard is connected. Gameplay geometry, world generation, enemies, combat, pause/resume validation and audio focus remain on the roadmap.
+This is a renderer/lifecycle and initial touch-input smoke test, not a full gameplay port. The current HUD provides a lower-left movement stick, right-side swipe look, and a lower-right hold-to-sprint button. These controls feed the same native input state as desktop keyboard controls. ADB-injected finger events were verified on the physical SM-J710F; direct hand-feel tuning and multi-device testing remain open. Gameplay geometry, world generation, enemies, combat, pause/resume validation and audio focus remain on the roadmap.

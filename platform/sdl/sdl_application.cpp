@@ -7,6 +7,7 @@
 
 #include <algorithm>
 #include <chrono>
+#include <cmath>
 #include <cstdio>
 
 namespace pd::platform::sdl {
@@ -14,6 +15,7 @@ namespace {
 using Clock = std::chrono::steady_clock;
 constexpr double kFixedStep = 1.0 / 60.0;
 constexpr double kMaxFrameDelta = 0.25;
+constexpr float kTouchLookRadiansPerScreen = 4.4F;
 
 struct KeyState {
     bool forward = false;
@@ -25,11 +27,31 @@ struct KeyState {
     bool look_right = false;
 };
 
-pd::core::InputState make_input(const KeyState& keys) {
+struct FingerBinding {
+    bool active = false;
+    SDL_FingerID id = 0;
+};
+
+struct TouchControls {
+    FingerBinding move_finger{};
+    FingerBinding look_finger{};
+    FingerBinding sprint_finger{};
+    float move_x = 0.0F;
+    float move_y = 0.0F;
+    float last_look_x = 0.0F;
+    float pending_look_radians = 0.0F;
+    bool sprint = false;
+};
+
+pd::core::InputState make_input(const KeyState& keys, const TouchControls& touch) {
     pd::core::InputState input{};
     input.move_z = static_cast<float>(keys.forward) - static_cast<float>(keys.backward);
     input.move_x = static_cast<float>(keys.right) - static_cast<float>(keys.left);
-    input.sprint = keys.sprint;
+    if (touch.move_finger.active) {
+        input.move_x += touch.move_x;
+        input.move_z += touch.move_y;
+    }
+    input.sprint = keys.sprint || touch.sprint;
     input.look_x = static_cast<float>(keys.look_right) - static_cast<float>(keys.look_left);
     return input;
 }
@@ -48,6 +70,98 @@ void update_key(KeyState& keys, SDL_Keycode key, bool down) {
         case SDLK_RIGHT: keys.look_right = down; break;
         default: break;
     }
+}
+
+void update_virtual_stick(TouchControls& touch, float finger_x, float finger_y, float aspect) {
+    constexpr float kStickCenterX = 0.16F;
+    constexpr float kStickCenterY = 0.78F;
+    constexpr float kStickRadius = 0.125F;
+
+    const float dx = (finger_x - kStickCenterX) * aspect / kStickRadius;
+    const float dy = (kStickCenterY - finger_y) / kStickRadius;
+    const float magnitude = std::sqrt(dx * dx + dy * dy);
+    constexpr float kDeadzone = 0.10F;
+    if (magnitude <= kDeadzone) {
+        touch.move_x = 0.0F;
+        touch.move_y = 0.0F;
+        return;
+    }
+
+    const float clamped_magnitude = std::min(magnitude, 1.0F);
+    const float remapped_magnitude = (clamped_magnitude - kDeadzone) / (1.0F - kDeadzone);
+    const float scale = remapped_magnitude / magnitude;
+    touch.move_x = dx * scale;
+    touch.move_y = dy * scale;
+}
+
+void handle_finger_down(
+    TouchControls& touch,
+    const SDL_TouchFingerEvent& finger,
+    float aspect) {
+    const float screen_x = finger.x * aspect;
+    const float screen_y = 1.0F - finger.y;
+
+    // Sprint button: fixed at the lower-right corner.
+    const float sprint_dx = screen_x - aspect * 0.88F;
+    const float sprint_dy = screen_y - 0.21F;
+    if (!touch.sprint_finger.active && std::sqrt(sprint_dx * sprint_dx + sprint_dy * sprint_dy) <= 0.135F) {
+        touch.sprint_finger = {true, finger.fingerID};
+        touch.sprint = true;
+        SDL_Log("Touch sprint down: id=%lld", static_cast<long long>(finger.fingerID));
+        return;
+    }
+
+    // Movement stick: left/lower quadrant, with a fixed center.
+    if (!touch.move_finger.active && screen_x < aspect * 0.43F && finger.y > 0.47F) {
+        touch.move_finger = {true, finger.fingerID};
+        update_virtual_stick(touch, finger.x, finger.y, aspect);
+        SDL_Log("Touch move down: id=%lld axis=(%.2f, %.2f)",
+            static_cast<long long>(finger.fingerID), touch.move_x, touch.move_y);
+        return;
+    }
+
+    // Any other touch on the right side becomes a relative-look gesture.
+    if (!touch.look_finger.active && screen_x >= aspect * 0.45F) {
+        touch.look_finger = {true, finger.fingerID};
+        touch.last_look_x = finger.x;
+        SDL_Log("Touch look down: id=%lld x=%.3f",
+            static_cast<long long>(finger.fingerID), finger.x);
+    }
+}
+
+void handle_finger_motion(TouchControls& touch, const SDL_TouchFingerEvent& finger, float aspect) {
+    if (touch.move_finger.active && touch.move_finger.id == finger.fingerID) {
+        update_virtual_stick(touch, finger.x, finger.y, aspect);
+    }
+
+    if (touch.look_finger.active && touch.look_finger.id == finger.fingerID) {
+        const float delta_x = finger.x - touch.last_look_x;
+        touch.pending_look_radians += delta_x * kTouchLookRadiansPerScreen;
+        touch.last_look_x = finger.x;
+    }
+}
+
+void handle_finger_up(TouchControls& touch, const SDL_TouchFingerEvent& finger) {
+    if (touch.move_finger.active && touch.move_finger.id == finger.fingerID) {
+        SDL_Log("Touch move up: id=%lld finalAxis=(%.2f, %.2f)",
+            static_cast<long long>(finger.fingerID), touch.move_x, touch.move_y);
+        touch.move_finger = {};
+        touch.move_x = 0.0F;
+        touch.move_y = 0.0F;
+    }
+    if (touch.look_finger.active && touch.look_finger.id == finger.fingerID) {
+        SDL_Log("Touch look up: id=%lld", static_cast<long long>(finger.fingerID));
+        touch.look_finger = {};
+    }
+    if (touch.sprint_finger.active && touch.sprint_finger.id == finger.fingerID) {
+        SDL_Log("Touch sprint up: id=%lld", static_cast<long long>(finger.fingerID));
+        touch.sprint_finger = {};
+        touch.sprint = false;
+    }
+}
+
+void reset_touch(TouchControls& touch) {
+    touch = TouchControls{};
 }
 } // namespace
 
@@ -118,6 +232,7 @@ int SdlApplication::run() {
 
     pd::core::Game game;
     KeyState keys{};
+    TouchControls touch{};
     bool running = true;
     double accumulator = 0.0;
     auto previous_time = Clock::now();
@@ -125,7 +240,11 @@ int SdlApplication::run() {
     unsigned int frames = 0;
 
     SDL_Log("Permission Denied native engine initialized.");
+#if defined(__ANDROID__)
+    SDL_Log("Touch: left stick move, right-side swipe look, lower-right button sprint.");
+#else
     SDL_Log("Controls: WASD move, SHIFT sprint, LEFT/RIGHT arrows look, ESC quit.");
+#endif
 
     while (running) {
         SDL_Event event{};
@@ -144,8 +263,26 @@ int SdlApplication::run() {
                 case SDL_EVENT_KEY_UP:
                     update_key(keys, event.key.key, false);
                     break;
+                case SDL_EVENT_FINGER_DOWN:
+                case SDL_EVENT_FINGER_MOTION:
+                case SDL_EVENT_FINGER_UP: {
+                    int point_width = 1;
+                    int point_height = 1;
+                    SDL_GetWindowSize(window, &point_width, &point_height);
+                    const float aspect = static_cast<float>(point_width) /
+                        static_cast<float>(std::max(point_height, 1));
+                    if (event.type == SDL_EVENT_FINGER_DOWN) {
+                        handle_finger_down(touch, event.tfinger, aspect);
+                    } else if (event.type == SDL_EVENT_FINGER_MOTION) {
+                        handle_finger_motion(touch, event.tfinger, aspect);
+                    } else {
+                        handle_finger_up(touch, event.tfinger);
+                    }
+                    break;
+                }
                 case SDL_EVENT_WINDOW_FOCUS_LOST:
                     keys = KeyState{};
+                    reset_touch(touch);
                     break;
                 default:
                     break;
@@ -157,17 +294,36 @@ int SdlApplication::run() {
         previous_time = now;
         accumulator += std::min(frame_delta, kMaxFrameDelta);
 
-        const auto input = make_input(keys);
+        const int pending_steps = static_cast<int>(accumulator / kFixedStep);
+        const float look_delta_per_step = pending_steps > 0
+            ? touch.pending_look_radians / static_cast<float>(pending_steps)
+            : 0.0F;
+        int executed_steps = 0;
         while (accumulator >= kFixedStep) {
+            auto input = make_input(keys, touch);
+            input.look_delta_radians = look_delta_per_step;
             game.update(input, static_cast<float>(kFixedStep));
             accumulator -= kFixedStep;
+            ++executed_steps;
+        }
+        if (executed_steps > 0) {
+            touch.pending_look_radians = 0.0F;
         }
 
         int width = 0;
         int height = 0;
         SDL_GetWindowSizeInPixels(window, &width, &height);
         renderer.resize(width, height);
-        renderer.render(game.state(), static_cast<float>(game.state().elapsed_seconds));
+
+        pd::renderer::TouchHudState touch_hud{};
+#if defined(__ANDROID__)
+        touch_hud.visible = true;
+#endif
+        touch_hud.move_x = touch.move_x;
+        touch_hud.move_y = touch.move_y;
+        touch_hud.move_active = touch.move_finger.active;
+        touch_hud.sprint_active = touch.sprint;
+        renderer.render(game.state(), static_cast<float>(game.state().elapsed_seconds), touch_hud);
         SDL_GL_SwapWindow(window);
 
         ++frames;

@@ -54,11 +54,16 @@ The Android target currently packages only `arm64-v8a`, uses minSdk 24, SDL3 sha
     cmake --build build --target pd_core_smoke
     ctest --test-dir build --output-on-failure
 
-## Controls and current limits
+## Controls
 
 Desktop keyboard controls: W/A/S/D move, Shift sprint, Left/Right arrows turn, Escape quit.
 
-The current Android bootstrap successfully launches the renderer, but it does not yet have an on-screen touch HUD. Touch movement, camera-look gestures, gameplay scene geometry, enemies and weapons are still future work. The current image is a procedural renderer validation scene, not the finished game.
+Android touchscreen controls:
+- Fixed virtual stick in the lower-left corner: move and strafe.
+- Swipe anywhere on the right half: rotate the view.
+- Hold the lower-right button: sprint.
+
+Touch and keyboard input feed the same native `InputState`; touch-look deltas are applied on the fixed simulation step. The Android HUD is drawn by the shared GLSL renderer. The current scene is still a procedural renderer validation scene, not the finished game; generated world geometry, enemies, combat, hacking and gameplay audio remain future work.
 
 ## Layout
 

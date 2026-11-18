@@ -15,6 +15,8 @@
 /android/build/
 /android/app/build/
 /android/pd_native_screen*.png
+/android/pd_touch*.png
+/android/core_smoke_arm64
 *.user
 *.suo
 *.swp

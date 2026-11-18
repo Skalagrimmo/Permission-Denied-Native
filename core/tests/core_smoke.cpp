@@ -50,11 +50,18 @@ int main() {
     game.update(input, 1.0F / 60.0F);
     assert(game.state().player.yaw_radians > yaw_before);
 
+    // One-shot touch-look delta is applied independently of frame-rate scaling.
+    input = {};
+    input.look_delta_radians = 0.25F;
+    const float yaw_before_touch = game.state().player.yaw_radians;
+    game.update(input, 1.0F / 60.0F);
+    assert(std::abs(game.state().player.yaw_radians - yaw_before_touch - 0.25F) < 0.0001F);
+
     const double elapsed_before_clamp = game.state().elapsed_seconds;
     game.update(InputState{}, 1.0F);
     const double clamped_step = game.state().elapsed_seconds - elapsed_before_clamp;
     assert(clamped_step <= 0.100001);
-    assert(game.state().simulation_ticks == 5);
+    assert(game.state().simulation_ticks == 6);
 
     // Kotlin Vector3 / MathUtils parity checks.
     Vector3 vector{3.0F, 4.0F, 12.0F};

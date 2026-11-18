@@ -28,6 +28,12 @@ uniform float uTime;
 uniform float uPlayerX;
 uniform float uPlayerZ;
 uniform float uYaw;
+uniform float uAspect;
+uniform float uMoveX;
+uniform float uMoveY;
+uniform float uMoveActive;
+uniform float uSprintActive;
+uniform float uTouchVisible;
 
 float hash(float n) {
     return fract(sin(n) * 43758.5453123);
@@ -49,8 +55,13 @@ void main() {
 
     if (uv.y < horizon) {
         float depth = max(horizon - uv.y, 0.012);
-        float perspectiveX = (uv.x - 0.5) / depth;
-        float perspectiveY = 1.0 / depth;
+        // The validation grid now reacts to player translation and camera yaw.
+        float perspectiveX = (uv.x - 0.5) / depth
+                           + (uPlayerX - 2.5) * 0.34
+                           + sin(uYaw) * 0.72;
+        float perspectiveY = 1.0 / depth
+                           + (uPlayerZ - 2.5) * 0.38
+                           + (cos(uYaw) - 1.0) * 0.22;
         float gridX = 1.0 - smoothstep(0.018, 0.045, abs(fract(perspectiveX * 0.34) - 0.5));
         float gridY = 1.0 - smoothstep(0.018, 0.05, abs(fract(perspectiveY * 0.055) - 0.5));
         float grid = max(gridX, gridY);
@@ -65,6 +76,38 @@ void main() {
     float crosshair = (1.0 - smoothstep(0.003, 0.006, center.x)) * step(center.y, 0.018)
                     + (1.0 - smoothstep(0.003, 0.006, center.y)) * step(center.x, 0.018);
     color += vec3(0.24, 0.76, 0.78) * crosshair * 0.72;
+
+    // Native touch HUD: a left movement stick and a right sprint button.
+    // Coordinates are measured in screen-height units to keep circular controls round.
+    float aspect = max(uAspect, 1.0);
+    vec2 hudPosition = vec2(uv.x * aspect, uv.y);
+    vec2 stickCenter = vec2(aspect * 0.16, 0.21);
+    float stickDistance = length(hudPosition - stickCenter);
+    float stickDisk = 1.0 - smoothstep(0.112, 0.132, stickDistance);
+    float stickRing = smoothstep(0.112, 0.118, stickDistance)
+                    * (1.0 - smoothstep(0.128, 0.134, stickDistance));
+    color = mix(color, vec3(0.012, 0.050, 0.070), stickDisk * uTouchVisible * 0.58);
+    color += vec3(0.025, 0.40, 0.48) * stickRing * uTouchVisible * 0.75;
+
+    vec2 stickKnobCenter = stickCenter + vec2(uMoveX, uMoveY) * 0.066;
+    float stickKnob = 1.0 - smoothstep(0.038, 0.048, length(hudPosition - stickKnobCenter));
+    color = mix(
+        color,
+        vec3(0.10, 0.67, 0.75),
+        stickKnob * uTouchVisible * mix(0.38, 0.95, uMoveActive)
+    );
+
+    vec2 sprintCenter = vec2(aspect * 0.88, 0.21);
+    float sprintDistance = length(hudPosition - sprintCenter);
+    float sprintDisk = 1.0 - smoothstep(0.092, 0.108, sprintDistance);
+    float sprintRing = smoothstep(0.096, 0.103, sprintDistance)
+                     * (1.0 - smoothstep(0.116, 0.124, sprintDistance));
+    vec3 sprintColor = mix(vec3(0.035, 0.105, 0.13), vec3(0.08, 0.53, 0.57), uSprintActive);
+    color = mix(color, sprintColor, sprintDisk * uTouchVisible * 0.84);
+    color += vec3(0.04, 0.57, 0.65) * sprintRing * uTouchVisible * 0.85;
+    float sprintGlyph = 1.0 - smoothstep(0.006, 0.012, abs(hudPosition.x - sprintCenter.x));
+    sprintGlyph *= 1.0 - smoothstep(0.027, 0.035, abs(hudPosition.y - sprintCenter.y));
+    color += vec3(0.52, 0.94, 0.96) * sprintGlyph * uTouchVisible * 0.78;
 
     float scanline = 0.96 + 0.04 * sin(uv.y * 720.0);
     float vignette = 1.0 - smoothstep(0.38, 0.78, length((uv - 0.5) * vec2(1.0, 0.8)));
@@ -91,6 +134,12 @@ uniform float uTime;
 uniform float uPlayerX;
 uniform float uPlayerZ;
 uniform float uYaw;
+uniform float uAspect;
+uniform float uMoveX;
+uniform float uMoveY;
+uniform float uMoveActive;
+uniform float uSprintActive;
+uniform float uTouchVisible;
 
 float hash(float n) {
     return fract(sin(n) * 43758.5453123);
@@ -112,8 +161,13 @@ void main() {
 
     if (uv.y < horizon) {
         float depth = max(horizon - uv.y, 0.012);
-        float perspectiveX = (uv.x - 0.5) / depth;
-        float perspectiveY = 1.0 / depth;
+        // The validation grid now reacts to player translation and camera yaw.
+        float perspectiveX = (uv.x - 0.5) / depth
+                           + (uPlayerX - 2.5) * 0.34
+                           + sin(uYaw) * 0.72;
+        float perspectiveY = 1.0 / depth
+                           + (uPlayerZ - 2.5) * 0.38
+                           + (cos(uYaw) - 1.0) * 0.22;
         float gridX = 1.0 - smoothstep(0.018, 0.045, abs(fract(perspectiveX * 0.34) - 0.5));
         float gridY = 1.0 - smoothstep(0.018, 0.05, abs(fract(perspectiveY * 0.055) - 0.5));
         float grid = max(gridX, gridY);
@@ -128,6 +182,38 @@ void main() {
     float crosshair = (1.0 - smoothstep(0.003, 0.006, center.x)) * step(center.y, 0.018)
                     + (1.0 - smoothstep(0.003, 0.006, center.y)) * step(center.x, 0.018);
     color += vec3(0.24, 0.76, 0.78) * crosshair * 0.72;
+
+    // Native touch HUD: a left movement stick and a right sprint button.
+    // Coordinates are measured in screen-height units to keep circular controls round.
+    float aspect = max(uAspect, 1.0);
+    vec2 hudPosition = vec2(uv.x * aspect, uv.y);
+    vec2 stickCenter = vec2(aspect * 0.16, 0.21);
+    float stickDistance = length(hudPosition - stickCenter);
+    float stickDisk = 1.0 - smoothstep(0.112, 0.132, stickDistance);
+    float stickRing = smoothstep(0.112, 0.118, stickDistance)
+                    * (1.0 - smoothstep(0.128, 0.134, stickDistance));
+    color = mix(color, vec3(0.012, 0.050, 0.070), stickDisk * uTouchVisible * 0.58);
+    color += vec3(0.025, 0.40, 0.48) * stickRing * uTouchVisible * 0.75;
+
+    vec2 stickKnobCenter = stickCenter + vec2(uMoveX, uMoveY) * 0.066;
+    float stickKnob = 1.0 - smoothstep(0.038, 0.048, length(hudPosition - stickKnobCenter));
+    color = mix(
+        color,
+        vec3(0.10, 0.67, 0.75),
+        stickKnob * uTouchVisible * mix(0.38, 0.95, uMoveActive)
+    );
+
+    vec2 sprintCenter = vec2(aspect * 0.88, 0.21);
+    float sprintDistance = length(hudPosition - sprintCenter);
+    float sprintDisk = 1.0 - smoothstep(0.092, 0.108, sprintDistance);
+    float sprintRing = smoothstep(0.096, 0.103, sprintDistance)
+                     * (1.0 - smoothstep(0.116, 0.124, sprintDistance));
+    vec3 sprintColor = mix(vec3(0.035, 0.105, 0.13), vec3(0.08, 0.53, 0.57), uSprintActive);
+    color = mix(color, sprintColor, sprintDisk * uTouchVisible * 0.84);
+    color += vec3(0.04, 0.57, 0.65) * sprintRing * uTouchVisible * 0.85;
+    float sprintGlyph = 1.0 - smoothstep(0.006, 0.012, abs(hudPosition.x - sprintCenter.x));
+    sprintGlyph *= 1.0 - smoothstep(0.027, 0.035, abs(hudPosition.y - sprintCenter.y));
+    color += vec3(0.52, 0.94, 0.96) * sprintGlyph * uTouchVisible * 0.78;
 
     float scanline = 0.96 + 0.04 * sin(uv.y * 720.0);
     float vignette = 1.0 - smoothstep(0.38, 0.78, length((uv - 0.5) * vec2(1.0, 0.8)));
@@ -197,6 +283,12 @@ struct OpenGLRenderer::Impl {
     gl::GLint player_x_location = -1;
     gl::GLint player_z_location = -1;
     gl::GLint yaw_location = -1;
+    gl::GLint aspect_location = -1;
+    gl::GLint move_x_location = -1;
+    gl::GLint move_y_location = -1;
+    gl::GLint move_active_location = -1;
+    gl::GLint sprint_active_location = -1;
+    gl::GLint touch_visible_location = -1;
     int width = 1280;
     int height = 720;
     bool initialized = false;
@@ -244,6 +336,12 @@ bool OpenGLRenderer::initialize() {
     impl_->player_x_location = api.GetUniformLocation(impl_->program, "uPlayerX");
     impl_->player_z_location = api.GetUniformLocation(impl_->program, "uPlayerZ");
     impl_->yaw_location = api.GetUniformLocation(impl_->program, "uYaw");
+    impl_->aspect_location = api.GetUniformLocation(impl_->program, "uAspect");
+    impl_->move_x_location = api.GetUniformLocation(impl_->program, "uMoveX");
+    impl_->move_y_location = api.GetUniformLocation(impl_->program, "uMoveY");
+    impl_->move_active_location = api.GetUniformLocation(impl_->program, "uMoveActive");
+    impl_->sprint_active_location = api.GetUniformLocation(impl_->program, "uSprintActive");
+    impl_->touch_visible_location = api.GetUniformLocation(impl_->program, "uTouchVisible");
 
     impl_->initialized = true;
     resize(impl_->width, impl_->height);
@@ -259,7 +357,10 @@ void OpenGLRenderer::resize(int width, int height) noexcept {
     }
 }
 
-void OpenGLRenderer::render(const pd::core::GameState& state, float time_seconds) noexcept {
+void OpenGLRenderer::render(
+    const pd::core::GameState& state,
+    float time_seconds,
+    const TouchHudState& touch) noexcept {
     if (!impl_->initialized) return;
 
     auto& api = impl_->api;
@@ -272,6 +373,21 @@ void OpenGLRenderer::render(const pd::core::GameState& state, float time_seconds
     if (impl_->player_x_location >= 0) api.Uniform1f(impl_->player_x_location, state.player.x);
     if (impl_->player_z_location >= 0) api.Uniform1f(impl_->player_z_location, state.player.z);
     if (impl_->yaw_location >= 0) api.Uniform1f(impl_->yaw_location, state.player.yaw_radians);
+    if (impl_->aspect_location >= 0) {
+        api.Uniform1f(impl_->aspect_location, static_cast<float>(impl_->width) /
+            static_cast<float>(impl_->height));
+    }
+    if (impl_->move_x_location >= 0) api.Uniform1f(impl_->move_x_location, touch.move_x);
+    if (impl_->move_y_location >= 0) api.Uniform1f(impl_->move_y_location, touch.move_y);
+    if (impl_->move_active_location >= 0) {
+        api.Uniform1f(impl_->move_active_location, touch.move_active ? 1.0F : 0.0F);
+    }
+    if (impl_->sprint_active_location >= 0) {
+        api.Uniform1f(impl_->sprint_active_location, touch.sprint_active ? 1.0F : 0.0F);
+    }
+    if (impl_->touch_visible_location >= 0) {
+        api.Uniform1f(impl_->touch_visible_location, touch.visible ? 1.0F : 0.0F);
+    }
 
     api.BindBuffer(gl::kArrayBuffer, impl_->vertex_buffer);
     api.EnableVertexAttribArray(0);

@@ -6,6 +6,7 @@ struct InputState {
     float move_x = 0.0F;
     float move_z = 0.0F;
     float look_x = 0.0F;
+    float look_delta_radians = 0.0F; // One-shot relative-look input, used by touch.
     bool sprint = false;
 };
 

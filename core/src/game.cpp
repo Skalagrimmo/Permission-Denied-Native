@@ -19,7 +19,7 @@ void Game::update(const InputState& input, float delta_seconds) noexcept {
     const float dt = std::clamp(delta_seconds, 0.0F, kMaxDeltaSeconds);
     if (dt <= 0.0F) return;
 
-    state_.player.yaw_radians += input.look_x * kTurnSpeed * dt;
+    state_.player.yaw_radians += input.look_x * kTurnSpeed * dt + input.look_delta_radians;
     if (state_.player.yaw_radians >= kTwoPi) {
         state_.player.yaw_radians = std::fmod(state_.player.yaw_radians, kTwoPi);
     } else if (state_.player.yaw_radians < 0.0F) {
