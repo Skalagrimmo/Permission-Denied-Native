@@ -41,6 +41,7 @@
 - [x] Verify left-only movement, right-only horizontal look, and simultaneous sprint + look in the sprint target on a physical SM-J710F.
 - [x] Correct world-grid projection signs so the scene moves opposite to camera/player motion.
 - [x] Build, install and launch the vector/ASCII hybrid renderer on the physical SM-J710F.
+- [x] Remove the duplicate touch-stick axis inversion after integrating the vector camera; preserve the right-side look path.
 - [ ] Tune touch deadzones/sensitivity from direct hand testing and test multi-touch on additional devices.
 - [ ] Verify lifecycle pause/resume, audio focus and save migration.
 - [ ] Evaluate armeabi-v7a separately.

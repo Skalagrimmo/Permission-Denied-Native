@@ -50,10 +50,10 @@ pd::core::InputState make_input(const KeyState& keys, const TouchControls& touch
     input.move_z = static_cast<float>(keys.forward) - static_cast<float>(keys.backward);
     input.move_x = static_cast<float>(keys.right) - static_cast<float>(keys.left);
     if (touch.move_finger.active) {
-        // The virtual stick's screen-space axes are opposite to the game's local movement axes.
-        // Keep the HUD knob aligned with the finger; invert only the gameplay input here.
-        input.move_x -= touch.move_x;
-        input.move_z -= touch.move_y;
+        // The stick already uses the game's local basis:
+        // screen-right is +X and screen-up is +Z (forward). Do not invert it again.
+        input.move_x += touch.move_x;
+        input.move_z += touch.move_y;
     }
     input.sprint = keys.sprint || touch.sprint;
     input.look_x = static_cast<float>(keys.look_right) - static_cast<float>(keys.look_left);
