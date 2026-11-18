@@ -34,8 +34,8 @@
 - [x] Add SDL3 Android application integration with a thin Java Activity shell.
 - [x] Build and install an arm64-v8a APK on a physical Samsung SM-J710F.
 - [x] Verify SDL_main resolution and OpenGL ES renderer startup in landscape.
-- [x] Add Android touch HUD: movement stick, two-axis look swipe and enlarged sprint hit area.
-- [x] Verify ADB-injected move/look/sprint gestures and HUD rendering on a physical SM-J710F.
+- [x] Add Android touch HUD with exclusive left-stick movement, full right-half two-axis look, and enlarged sprint target.
+- [x] Verify left-only movement, right-only horizontal look, and simultaneous sprint + look in the sprint target on a physical SM-J710F.
 - [x] Correct world-grid projection signs so the scene moves opposite to camera/player motion.
 - [ ] Tune touch deadzones/sensitivity from direct hand testing and test multi-touch on additional devices.
 - [ ] Verify lifecycle pause/resume, audio focus and save migration.

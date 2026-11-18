@@ -10,11 +10,15 @@
 - Touch yaw and pitch deltas are distributed across pending fixed simulation steps, avoiding frame-rate-dependent camera sensitivity.
 - Sprint touch radius is 0.23 screen-height units (about 166 px radius / 331 px diameter at 720p); the visible button is smaller than its hit area.
 
-## Direction correction
+## Direction and input-zone correction
 
-Initial device feedback identified that the scene appeared to move in the same direction as the player/camera. The touch axes themselves were already sending the intended direction; the inversion was in the procedural floor-grid projection. Player translation and yaw offsets in the shader have therefore been changed to subtract camera movement from static-world coordinates. The movement input mapping was intentionally left unchanged.
+Device feedback identified two separate issues:
+- The virtual stick's gameplay movement was fully inverted. The visual stick knob still follows the finger, but the two stick axes are now negated only when translated into the native movement input.
+- A touch inside the enlarged sprint hit area returned early and never became a camera-look gesture. Right-side touches are now always assigned to camera look; a touch within the sprint target additionally holds sprint. The right half never creates movement input. The left stick is the only movement zone.
 
-Vertical swipe was added as pitch input. An upward swipe raises the view; pitch is clamped to +/-45 degrees in the native game state and moves the horizon in the shader.
+The procedural floor-grid projection also uses the opposite sign from camera/player movement so the static world appears to move against camera motion.
+
+Vertical swipe is pitch input. An upward swipe raises the view; pitch is clamped to +/-45 degrees in the native game state and moves the horizon in the shader.
 
 ## Device verification
 
@@ -28,10 +32,12 @@ Previously verified on device:
 - Core smoke suite was compiled for arm64-v8a and executed on device with exit code 0.
 
 Current revision rebuilt and installed on the SM-J710F:
-- A sprint tap at screen coordinate (1000, 580), which was outside the previous 0.135-radius hit area, now triggers sprint down/up inside the expanded 0.23-radius area.
+- Left-stick-only gesture emitted move down/up events and no look/sprint events; both gameplay axes are negated when mapped into native movement input.
+- A horizontal swipe in the middle of the right half emitted look down/up and no move/sprint events.
+- A swipe starting inside the enlarged sprint target emitted sprint down/up and look down/up for the same finger, enabling simultaneous sprint + camera-look.
 - A diagonal right-side swipe (up and right) changes yaw and pitch; the captured screen shows the horizon moving lower after looking upward.
 - The GLSL renderer starts without shader/link errors.
-- The updated arm64 core smoke suite executes on-device with exit code 0, including pitch clamping at +/-45 degrees.
+- The updated arm64 core smoke suite previously executed on-device with exit code 0, including pitch clamping at +/-45 degrees.
 
 ## Known limits
 

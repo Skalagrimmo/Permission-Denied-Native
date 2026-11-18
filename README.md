@@ -59,9 +59,9 @@ The Android target currently packages only `arm64-v8a`, uses minSdk 24, SDL3 sha
 Desktop keyboard controls: W/A/S/D move, Shift sprint, Left/Right arrows turn, Escape quit.
 
 Android touchscreen controls:
-- Fixed virtual stick in the lower-left corner: move and strafe.
-- Swipe anywhere on the right half: rotate the view horizontally and vertically.
-- Hold the enlarged lower-right touch zone: sprint (the hit target is larger than the visible button).
+- Lower-left virtual stick: the only movement input; forward/back and strafe are mapped independently of camera look.
+- Entire right half: horizontal and vertical camera look only; it never generates movement input.
+- Enlarged lower-right touch zone: hold to sprint. Touching it also keeps the right-side camera-look gesture active, so sprint and look can be combined.
 
 Touch and keyboard input feed the same native `InputState`; touch-look deltas are applied on the fixed simulation step. The Android HUD is drawn by the shared GLSL renderer. The current scene is still a procedural renderer validation scene, not the finished game; generated world geometry, enemies, combat, hacking and gameplay audio remain future work.
 
